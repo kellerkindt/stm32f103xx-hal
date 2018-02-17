@@ -57,7 +57,7 @@ macro_rules! gpio {
             use rcc::APB2;
             use super::{
                 Alternate, Floating, GpioExt, Input,
-                // OpenDrain,
+                OpenDrain,
                 Output,
                 // PullDown, PullUp,
                 PushPull,
@@ -258,6 +258,27 @@ macro_rules! gpio {
 
                     //     $PXi { _mode: PhantomData }
                     // }
+
+                    /// Configures the pin to operate as an open drain output pin
+                    pub fn into_open_drain_output(
+                        self,
+                        cr: &mut $CR,
+                    ) -> $PXi<Output<OpenDrain>> {
+                        let offset = (4 * $i) % 32;
+                        // General purpose output push-pull
+                        let cnf = 0b01;
+                        // Output mode, max speed 50 MHz
+                        let mode = 0b10;
+                        let bits = (cnf << 2) | mode;
+
+                        cr
+                            .cr()
+                            .modify(|r, w| unsafe {
+                                w.bits((r.bits() & !(0b1111 << offset)) | (bits << offset))
+                            });
+
+                        $PXi { _mode: PhantomData }
+                    }
 
                     /// Configures the pin to operate as an push pull output pin
                     pub fn into_push_pull_output(
